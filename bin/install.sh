@@ -17,11 +17,12 @@ RM_ACTION=manual
 print_usage(){
 cat <<EOF 1>&2
 
-usage: $PRG [-hrs] instanzname
+usage: $PRG [-hrse] instanzname
 
 Optionen:
     s: Vorhandener Server wird beendet und die Installation wird gesichert. (*_$SAVE_DATE)
     r: Vorhandener Server wird beendet und die Installation wird gelöscht.
+    e: Verwende Environment fuer Einstellungen und nicht instanzname. Experimentell!
     h: Diese Hilfeseite
 
 Funktion:
@@ -42,13 +43,15 @@ link_to_jboss7() {
 
 ######################   Optionen bestimmen ###################
 
-while getopts "rsh" option
+while getopts "rshe" option
 do
     case $option in
       s)
-        RM_ACTION=save;;
+        RM_ACTION="save";;
       r)
-        RM_ACTION=remove;;
+        RM_ACTION="remove";;
+      e)
+        USE_ENV="true";;
       *)
         print_usage
         exit 1
@@ -62,34 +65,40 @@ INSTANZ=$1
 
 ##################### Beginn #########################
 
-if [ x$INSTANZ = x ]; then
+if [ x$USE_ENV = xtrue ]; then
+	JBOSS_SKRIPT=$BIN_DIR/jboss7
+
+elif [ x$INSTANZ = x ]; then
 	print_usage
 	echo "Instanzname ist nicht gesetzt!" 1>&2
 	exit 1
+else
+	JBOSS_SKRIPT=$BIN_DIR/$INSTANZ
+	link_to_jboss7 $JBOSS_SKRIPT
+	JBOSS_INSTANZ_NAME=$INSTANZ
 fi
 
-JBOSS_SKRIPT=$BIN_DIR/$INSTANZ
 echo "JBOSS_SKRIPT is at $JBOSS_SKRIPT" 
-link_to_jboss7 $JBOSS_SKRIPT
 
 # set -x
 # Einlesen der Hilfsfunktionen
-JBOSS_INSTANZ_NAME=$INSTANZ
 . $JBOSS_SKRIPT status
 
 SAVE_DIR=${JBOSS_HOME}_$SAVE_DATE
 if is_running; then
 	echo
-    echo "Ein Server läuft in dieser Installation. Stoppen Sie den Server und entfernen sie das Server-Verzeichnis."
+    echo -n "Ein Server läuft in dieser Installation. "
     case $RM_ACTION in
       save)
+    	echo "Server wird heruntergefahren."
         $JBOSS_SKRIPT stop
-        mv $JBOSS_HOME $SAVE_DIR
         ;;
       remove)
-        $JBOSS_SKRIPT tear-down
+    	echo "Server wird heruntergefahren."
+        $JBOSS_SKRIPT stop
 		;;
       *)
+    	echo "Stoppen Sie den Server und sichern Sie das JBoss-Verzeichnis!"
     	echo "$JBOSS_SKRIPT stop"
     	echo "mv $JBOSS_HOME $SAVE_DIR"
 		exit 2
@@ -99,12 +108,14 @@ fi
 
 if [ -d $JBOSS_HOME ]; then
 	echo
-    echo "Das JBOSS_HOME Verzeichnis ($JBOSS_HOME) existiert. Entfernen Sie das Verzeichnis."
+    echo -n "Das JBOSS_HOME Verzeichnis ($JBOSS_HOME) existiert. "
     case $RM_ACTION in
       save)
+    	echo "Es wird gesichert auf: $SAVE_DIR"
         mv $JBOSS_HOME $SAVE_DIR
         ;;
       remove)
+    	echo "Es wird geloescht."
         if [ -d $JBOSS_HOME/standalone ]; then
 			rm -rf $JBOSS_HOME
 		else
@@ -114,7 +125,9 @@ if [ -d $JBOSS_HOME ]; then
 		fi
 		;;
       *)
-    	echo "rm -rf $JBOSS_HOME"
+    	echo "Loeschen oder sichern Sie das Verzeichnis."
+		echo "rm -rf $JBOSS_HOME"
+        echo "mv $JBOSS_HOME $SAVE_DIR"
 		exit 4
         ;;
     esac

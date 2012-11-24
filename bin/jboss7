@@ -1,0 +1,322 @@
+#!/bin/bash
+#
+# Copyright (C) Objectbay Software & Consulting GmbH 2012
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License Version 3.
+#
+# 
+# Allgemeins Start - Stop Script für JBoss7
+# Spezielle Start/Stop-Skripts sollten nur ein link auf dieses
+# Script sein. 
+# Konfiguration durch $HOME/.${instanzName}rc
+
+if [ x$JBOSS_INSTANZ_NAME = x ]; then
+	instanzName=`basename $0`
+else
+	instanzName=$JBOSS_INSTANZ_NAME
+fi
+
+TIMEOUT=40
+
+test -f $HOME/.${instanzName}rc && . $HOME/.${instanzName}rc
+
+if [ X$JBOSS_HOME = X ]; then
+	echo "WARNING! Variable JBOSS_HOME is not set. Using Default value $HOME/jboss!"
+	JBOSS_HOME=$HOME/jboss
+fi
+ 
+export JBOSS_HOME
+ 
+if [ X$DEPLOY_SUBDIR = X ]; then
+	DEPLOY_SUBDIR=""
+fi
+ 
+if [ X$PORT_OFFSET = X ]; then
+	PORT_OFFSET=0
+else
+	OFFSET_PROP="-Djboss.socket.binding.port-offset=$PORT_OFFSET"
+fi
+
+let ADMIN_PORT=9999+$PORT_OFFSET
+
+rundir=$JBOSS_HOME/standalone
+start="$JBOSS_HOME/bin/standalone.sh -Djboss.node.name=$instanzName $OFFSET_PROP $JBOSS_OPTS"
+configFile=$rundir/configuration/standalone.xml
+displayName="JBoss Server $instanzName"
+
+if [ ! X$DOMAIN_MODE = X ]; then
+	rundir=$JBOSS_HOME/domain
+	start="$JBOSS_HOME/bin/domain.sh $JBOSS_OPTS"
+	displayName="JBoss Domain $instanzName"
+	configFile=$rundir/configuration/domain.xml
+fi
+
+logdir=$rundir/log
+deployDir=$rundir/deployments/$DEPLOY_SUBDIR
+out=$logdir/out.log
+logfile=$logdir/server.log
+pidfile=$rundir/pid.lock
+admin="$JBOSS_HOME/bin/jboss-cli.sh --connect --controller=${BIND_ADDRSS-localhost}:$ADMIN_PORT"
+moduleDir="$JBOSS_HOME/modules"
+ 
+
+action="$1"
+deployment="$2"
+ 
+###########################
+# getting pid from pid.lock
+###########################
+get_pid() {
+    if [ -f $pidfile ]; then
+        #ps --ppid `cat $pidfile` | perl -wne '{/([0-9]+)/ && print $1}'
+        
+        # ps --pid `cat $pidfile` | perl -wne '{/([0-9]+)/ && print $1}'
+       
+	standalone_pid=`cat $pidfile` 
+        if [ `uname` = "Darwin" ];
+        then
+        	ps -ef | grep "$standalone_pid" | grep java | awk '{print $2}'
+        else
+        	ps --ppid "$standalone_pid" | perl -wne '{/([0-9]+)/ && print $1}' 
+        fi
+    fi
+}
+
+###########################
+# configure server from directory
+###########################
+config_dir() {
+	dir=$1
+	curr_dir=`pwd`
+	echo "Configure Directory $dir"
+	cd $dir
+	if [ -f 00_BOOTSTRAP ]; then
+		echo "Execute 00_BOOTSTRAP"
+		/bin/sh 00_BOOTSTRAP || ( echo "00_BOOTSTRAP failed" && exit -1 ) || exit -1
+	fi
+	for file in *; do
+		configure $file
+	done
+	cd $curr_dir
+}
+
+###########################
+# configure server from file
+###########################
+configure() {
+	file=`readlink -f $1`
+	f_dir=`dirname $file`
+	f_curr_dir=`pwd`
+	cd $f_dir
+
+	ext=`echo $file | sed  's/.*\.//'`
+	case "$ext" in
+	  conf)
+		echo $admin --file=$file
+		$admin --file=$file
+  	  ;;
+  	  sh)
+		echo /bin/sh $file
+		/bin/sh $file
+  	  ;;
+  	  module)
+		echo unzip -d $moduleDir $file
+		unzip -d $moduleDir $file
+  	  ;;
+  	  restart)
+		echo $0 restart
+		$0 restart
+  	  ;;
+  	  00_BOOTSTRAP)
+		# Already done
+  	  ;;
+	  *)
+		echo "Ignoring $file with unknown extension $ext." 1>&2
+  	  ;;
+	esac
+
+	cd $f_curr_dir
+}
+ 
+###########################
+# check for running server
+###########################
+is_running() {
+ 
+    pid=`get_pid`
+    if [ -z "$pid" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+ 
+###########################
+# check logfile for Started-Message
+###########################
+check_started() {
+ 	file=$1
+    grep -q 'JBoss.*started' $file
+}
+
+################################################
+#                   MAIN
+################################################
+ 
+case "$action" in
+  start)
+    if is_running; then
+        echo "$displayName is already running. PID: " `get_pid`
+        exit 0
+    fi
+ 
+    echo "$start"
+    echo -n "Starting $displayName "
+    if ! [ -d $logdir ]; then
+        echo Create Log-Verzeichnis: $logdir
+        mkdir $logdir || exit -2
+    fi
+    cd $rundir
+    rm -f $out
+    $start > $out 2>&1 &
+    echo -n $! > $pidfile
+    cnt=$TIMEOUT
+    sleep 1
+    while [ $cnt -gt 0 ] && ! check_started $out 
+    do
+        let cnt=$cnt-1
+        echo -n "."
+        sleep 1
+    done
+    echo 
+    if is_running; then
+		if check_started $out; then
+    		echo "$displayName started"
+		else
+    		echo "$displayName process seems to run, but no 'started' message was found in output." 1>&2
+    		echo "It might hang or loglevel is set too high for standard output!" 1>&2
+		fi
+    else
+        echo "$displayName not startet!" 1>&2
+		exit -3
+    fi
+  ;;
+  stop)
+    if  ! is_running; then
+        echo "$displayName not running"
+    else
+        echo -n "Shutting down $displayName "
+        kill -TERM `get_pid` # 2>/dev/null
+        cnt=$TIMEOUT
+        while [ $cnt -gt 0 ] && is_running
+        do
+            let cnt=$cnt-1
+            echo -n "."
+            sleep 1
+        done
+    	echo 
+        if is_running; then
+            echo "Error shutting down $displayName, killing"
+            kill -KILL `get_pid`
+        else
+            echo "$displayName stopped"
+        fi
+    fi
+  ;;
+  restart)
+    $0 stop
+	sleep 1
+    $0 start "$@"
+  ;;
+    status)
+    pid=`get_pid`
+    if [ -z "$pid" ]; then
+        #not running
+        echo "$displayName is not running"
+    else
+        echo "$displayName running on pid $pid"
+    fi
+    echo "  JBOSS_HOME=$JBOSS_HOME"
+	if [ ! -d $JBOSS_HOME ]; then
+		echo "  Directory $JBOSS_HOME does not exist!"
+	fi
+    echo "  Stdoutfile: $out"
+    echo "  Logfile: $logfile"
+    echo "  Pidfile: $pidfile"
+    echo "  Deploy dir: $deployDir"
+    echo "  Config file: $configFile"
+  ;;
+  log)
+    tail -f $logfile
+  ;;
+  out)
+    tail -f $out
+  ;;
+  deploy)
+	test -d $deployDir || mkdir $deployDir
+    cp -r $deployment $deployDir
+	deploymentBase=`basename $deployment`
+	deploymentFailed=$deployDir/$deploymentBase.failed
+	test -f $deploymentFailed  && rm $deploymentFailed || echo Deployed $deploymentBase
+	# $0 restart
+  ;;
+  admin)
+	echo $admin
+	$admin
+  ;;
+  tear-down)
+    if is_running; then
+        $0 stop
+        echo "rm -rf $JBOSS_HOME"
+        rm -rf $JBOSS_HOME
+    else
+        echo "For security-reasons only running instances are removed." 1>&2
+        echo "Remove manually with:" 1>&2
+        echo "rm -rf $JBOSS_HOME" 1>&2
+		exit -1
+    fi
+  ;;
+  run|configure)
+    if [ -z "$deployment" ]; then
+		echo "usage: $0 $1 file.extension" 1>&2
+		echo "  where extension is in:" 1>&2
+		echo "    conf - file with commands for $admin" 1>&2
+		echo "    sh   - file with shell commands. JBOSS_HOME is exported." 1>&2
+		echo "    module - Zip-file to be unpacked in $moduleDir" 1>&2
+		echo "    restart - call $0 restart" 1>&2
+		echo "" 1>&2
+		echo "If the file is a directory, it will be processed recursively." 1>&2
+		echo "If there is a file 00_BOOTSTRAP in a directory, it will be processed before everything else. Eg. for handling templates." 1>&2
+		exit -1
+    fi
+    if [ -f $deployment ]; then
+		configure $deployment
+    elif [ -d $deployment ]; then
+		config_dir $deployment
+	else
+		echo "File or directory $deployment doesn't exist" 1>&2
+    fi
+  ;;
+  *)
+    cat >&2 <<EOF
+    Usage: $0 <command> [file]
+ 
+    where <command> is one of:
+        start       - start $displayName
+        stop        - stop $displayName (kill)
+        restart     - stoppen und starten
+        status      - check wether $displayName is running
+        admin       - starten von jboss-cli.sh
+        deploy f    - copy file f to $deployDir
+        configure f - configure server with file or directory f. Use >$0 configure< for more help.
+        run f       - same as configure. Intended to run scripts within the specific environment.
+        tear-down   - remove the whole installation! (rm -rf $JBOSS_HOME)
+        log         - show logfile with tail -f
+        out         - show console output with tail -f
+        help        - this screen
+EOF
+    exit 1
+esac
+

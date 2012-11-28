@@ -125,6 +125,10 @@ configure() {
 		echo unzip -d $moduleDir $file
 		unzip -d $moduleDir $file
   	  ;;
+  	  zip)
+		echo unzip -d $JBOSS_HOME $file
+		unzip -d $JBOSS_HOME $file
+  	  ;;
   	  restart)
 		echo $0 restart
 		$0 restart
@@ -193,6 +197,7 @@ case "$action" in
     echo 
     if is_running; then
 		if check_started $out; then
+			sleep 2 # Workaround. It seems that sometimes the admin-port is not open immediately
     		echo "$displayName started"
 		else
     		echo "$displayName process seems to run, but no 'started' message was found in output." 1>&2
@@ -285,6 +290,7 @@ case "$action" in
 		echo "    conf - file with commands for $admin" 1>&2
 		echo "    sh   - file with shell commands. JBOSS_HOME is exported." 1>&2
 		echo "    module - Zip-file to be unpacked in $moduleDir" 1>&2
+		echo "    zip - Zip-file to be unpacked in JBOSS_HOME ($JBOSS_HOME)" 1>&2
 		echo "    restart - call $0 restart" 1>&2
 		echo "" 1>&2
 		echo "If the file is a directory, it will be processed recursively." 1>&2

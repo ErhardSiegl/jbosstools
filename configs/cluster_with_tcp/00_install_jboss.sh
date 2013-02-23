@@ -30,4 +30,3 @@ mv $TmpInstall/* $JBOSS_HOME
 rm -r $TmpInstall
 
 cat README.txt
-

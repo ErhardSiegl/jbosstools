@@ -97,7 +97,6 @@ config_dir() {
 		echo "Execute 00_BOOTSTRAP"
 		/bin/sh 00_BOOTSTRAP || ( echo "00_BOOTSTRAP failed" && exit -1 ) || exit -1
 	fi
-	echo DIR++++++++++ *
 	for file in *; do
 		configure $file
 	done

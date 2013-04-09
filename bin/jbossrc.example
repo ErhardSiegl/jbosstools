@@ -1,0 +1,15 @@
+# Copy this with name '.' + instanzname + 'rc' (e.g. .mybossrc for myboss) to $HOME
+
+JBOSS_HOME=$HOME/jboss-eap-6.0
+export JBossPackage=$HOME/Downloads/jboss-eap-6.0.1.zip
+
+# For Cluster
+# BIND_ADDRSS=192.168.40.129
+
+# JBOSS_OPTS="-Djboss.bind.address=$BIND_ADDRSS -Djboss.bind.address.management=$BIND_ADDRSS"
+
+# PORT_OFFSET=100
+
+# Environment-dependent configuration
+# export ENV_CONFIG=../environments/esiegl
+

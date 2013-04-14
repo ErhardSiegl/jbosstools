@@ -18,6 +18,8 @@ else
 	instanzName=$JBOSS_INSTANZ_NAME
 fi
 
+# You may use TIMEOUT or JBOSS_TIMEOUT, JBOSS_START_TIMEOUT, JBOSS_STOP_TIMEOUT
+# The use of TIMEOUT is deprecated. Use JBOSS_TIMEOUT instead.
 TIMEOUT=40
 
 test -f $HOME/.${instanzName}rc && . $HOME/.${instanzName}rc
@@ -26,7 +28,11 @@ if [ X$JBOSS_HOME = X ]; then
 	echo "WARNING! Variable JBOSS_HOME is not set. Using Default value $HOME/jboss!"
 	JBOSS_HOME=$HOME/jboss
 fi
- 
+
+TIMEOUT=${JBOSS_TIMEOUT:-"$TIMEOUT"}
+START_TIMEOUT=${JBOSS_START_TIMEOUT:-"$TIMEOUT"}
+STOP_TIMEOUT=${JBOSS_STOP_TIMEOUT:-"$TIMEOUT"}
+
 export JBOSS_HOME
 export JBOSS_INSTANZ_NAME=$instanzName
  
@@ -116,23 +122,33 @@ configure() {
 	case "$ext" in
 	  conf)
 		echo $admin --file=$file
-		$admin --file=$file
+		$admin --file=$file || {
+			echo "[ERROR]: failed executing $admin --file=$file" ; exit 1
+		}
   	  ;;
   	  sh)
 		echo /bin/sh $file
-		/bin/sh $file
+		/bin/sh $file || {
+			echo "[ERROR]: failed executing /bin/sh $file" ; exit 0
+		}
   	  ;;
   	  module)
 		echo unzip -d $moduleDir $file
-		unzip -d $moduleDir $file
+		unzip -d $moduleDir $file || {
+            echo "[ERROR]: failed executing unzip -d $moduleDir $file" ; exit 1
+        }
   	  ;;
   	  zip)
 		echo unzip -d $JBOSS_HOME $file
-		unzip -d $JBOSS_HOME $file
+		unzip -d $JBOSS_HOME $file || {
+            echo "[ERROR]: failed executing unzip -d $JBOSS_HOME $file" ; exit 1
+        }
   	  ;;
   	  restart)
 		echo $0 restart
-		$0 restart
+		$0 restart || {
+            echo "[ERROR]: failed executing $0 restart" ; exit 1
+        }
   	  ;;
   	  00_BOOTSTRAP)
 		# Already done
@@ -163,7 +179,7 @@ is_running() {
 ###########################
 check_started() {
  	file=$1
-    grep -q 'JBoss.*started' $file
+	egrep -iq 'JBoss (EAP|AS).*(started|gestartet)' $file
 }
 
 ################################################
@@ -187,7 +203,7 @@ case "$action" in
     rm -f $out
     $start > $out 2>&1 &
     echo -n $! > $pidfile
-    cnt=$TIMEOUT
+    cnt=$START_TIMEOUT
     sleep 1
     while [ $cnt -gt 0 ] && ! check_started $out 
     do
@@ -201,8 +217,8 @@ case "$action" in
 			sleep 2 # Workaround. It seems that sometimes the admin-port is not open immediately
     		echo "$displayName started"
 		else
-    		echo "$displayName process seems to run, but no 'started' message was found in output." 1>&2
-    		echo "It might hang or loglevel is set too high for standard output!" 1>&2
+			echo "$displayName process seems to run, but no 'started' message was found in output within $START_TIMEOUT seconds." 1>&2
+			echo "The timeout (START_TIMEOUT) may be too low, it might hang or the loglevel is set too high for standard output!" 1>&2
 		fi
     else
         echo "$displayName not startet!" 1>&2
@@ -215,7 +231,7 @@ case "$action" in
     else
         echo -n "Shutting down $displayName "
         kill -TERM `get_pid` # 2>/dev/null
-        cnt=$TIMEOUT
+        cnt=$STOP_TIMEOUT
         while [ $cnt -gt 0 ] && is_running
         do
             let cnt=$cnt-1
@@ -229,6 +245,7 @@ case "$action" in
         else
             echo "$displayName stopped"
         fi
+		rm -f $pidfile 
     fi
   ;;
   restart)
@@ -281,7 +298,7 @@ case "$action" in
         echo "For savety-reasons only running instances are removed." 1>&2
         echo "Remove manually with:" 1>&2
         echo "rm -rf $JBOSS_HOME" 1>&2
-		exit -1
+		exit -5
     fi
   ;;
   run|configure)

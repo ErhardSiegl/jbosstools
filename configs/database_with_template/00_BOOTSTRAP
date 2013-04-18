@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ -z "$ENV_CONFIG" ]; then
+	ENV_CONFIG=$1
+fi
+
+if [ ! -d "$ENV_CONFIG" ]; then
+    echo "Directory $ENV_CONFIG doesn't exist! Set ENV_CONFIG or use argument" 1>&2
+    exit 1
+fi
+
+
+###########################
+# convert all m4 templates in directory and subdirectories
+###########################
+convert() {
+    dir=$1
+    echo "Configure Directory $dir"
+	for f in `find $dir -name "*.m4"`; do
+		dirname=`dirname $f`
+		basename=`basename $f .m4`
+		echo Process template $f
+		m4 -I "$ENV_CONFIG" -I ../environments/default $f > $dirname/$basename
+	done
+}
+
+convert `pwd`

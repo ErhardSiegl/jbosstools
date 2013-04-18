@@ -333,16 +333,16 @@ case "$action" in
   ;;
   run|configure)
     if [ -z "$deployment" ]; then
-		echo "usage: $0 $1 file.extension" 1>&2
-		echo "  where extension is in:" 1>&2
-		echo "    conf - file with commands for $admin" 1>&2
-		echo "    sh   - file with shell commands. JBOSS_HOME is exported." 1>&2
-		echo "    module - Zip-file to be unpacked in $moduleDir" 1>&2
-		echo "    zip - Zip-file to be unpacked in JBOSS_HOME ($JBOSS_HOME)" 1>&2
-		echo "    restart - call $0 restart" 1>&2
+		echo "    Usage: $0 $1 [ file | dir ]" 1>&2
+		echo "      where the file-extension is in:" 1>&2
+		echo "        conf    - file with commands for $admin" 1>&2
+		echo "        sh      - file with shell commands. JBOSS_HOME is exported." 1>&2
+		echo "        module  - Zip-file to be unpacked in $moduleDir (deprecated, use zip instead)" 1>&2
+		echo "        zip     - Zip-file to be unpacked in JBOSS_HOME ($JBOSS_HOME)" 1>&2
+		echo "        restart - call $0 restart" 1>&2
 		echo "" 1>&2
-		echo "If the file is a directory, it will be processed recursively." 1>&2
-		echo "If there is a file 00_BOOTSTRAP in a directory, it will be processed before everything else. Eg. for handling templates." 1>&2
+		echo "    If the argument is a directory, it will be processed recursively." 1>&2
+		echo "    If there is a file 00_BOOTSTRAP in a directory, it will be processed before everything else. Eg. for handling templates." 1>&2
 		exit -1
     fi
     if [ -f $deployment ]; then

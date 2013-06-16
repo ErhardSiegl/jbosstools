@@ -1,4 +1,8 @@
 HOST=`hostname`
+
+# clean old files
+rm -f server.keystore certreq.csr
+
 echo Create keypair for $HOST
 keytool -genkeypair -alias jboss -keyalg RSA -keystore server.keystore -storepass passwort -keypass passwort --dname "CN=$HOST,OU=Engineering,O=Objectbay,L=Traun,C=AT"
 

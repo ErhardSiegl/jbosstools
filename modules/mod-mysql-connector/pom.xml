@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>01_mod-mysql-connector</artifactId>
+  <packaging>pom</packaging>
+  <parent>
+  	<groupId>com.objectbay</groupId>
+  	<artifactId>jboss-modules-examples</artifactId>
+  	<version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <properties>
+    <module.path>${project.build.directory}/modules/com/mysql/connector/main</module.path>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.gmaven</groupId>
+        <artifactId>gmaven-plugin</artifactId>
+        <version>1.3</version><!--$NO-MVN-MAN-VER$-->
+        <configuration>
+          <source>
+            def sw = new StringWriter()
+            def xml = new groovy.xml.MarkupBuilder(sw)
+            xml.module(xmlns:"urn:jboss:module:1.0",name:"com.mysql.connector") {
+              resources {
+                project.runtimeClasspathElements.each {
+                  def path = it.find(".*?([\\w\\.-]*\\.jar)") { it[1] }
+                  !path?:"resource-root"(path:path)
+                }
+              }
+              dependencies{
+                module(name:"javax.api")
+                module(name:"javax.transaction.api")
+              }
+            }
+            println sw
+            def fpath = project.properties.get("module.path")
+            new File(fpath).mkdirs()
+            println "Write module.xml to: " + fpath
+            new File(fpath + "/module.xml").write(sw.toString()) 
+          </source>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+	<dependency>
+    	<groupId>mysql</groupId>
+    	<artifactId>mysql-connector-java</artifactId>
+    	<version>5.1.24</version>
+	</dependency>
+  </dependencies>
+</project>

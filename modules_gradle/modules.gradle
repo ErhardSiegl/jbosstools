@@ -1,0 +1,35 @@
+task moduleXml << {
+    createModuleXml()
+    writeModuleXml( moduleName, createModuleXml())
+}
+
+task copyModuleLibs(type: Sync) {
+    from configurations.jbossModule
+    into computeModulePath(moduleName)
+}
+
+task zipModule( type: Zip) {
+    description = """Builds JBoss-Module ${moduleName}"""
+    classifier = 'jboss-module'
+    from "${buildDir.path}/zip"
+}
+zipModule.dependsOn moduleXml, copyModuleLibs
+
+artifacts {
+    archives zipModule
+}
+
+String computeModulePath( String moduleName){
+    def path = (moduleName =~ /\./).replaceAll("/")
+    "${buildDir.path}/zip/modules/${path}/main"
+}
+computeModulePath = { String moduleName -> computeModulePath(moduleName) }
+
+String writeModuleXml(String moduleName, String content){
+    println content
+    def modulepath = computeModulePath( moduleName)
+    println "Write module.xml to: " + modulepath
+    new File(modulepath).mkdirs()
+    new File(modulepath + "/module.xml").write(content)
+}
+writeModuleXml = { String moduleName, String content -> writeModuleXml( moduleName, content) }

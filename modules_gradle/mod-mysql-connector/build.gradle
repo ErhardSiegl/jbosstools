@@ -23,40 +23,16 @@ dependencies {
 //    jbossModule group: 'org.codehaus.gmaven', name: 'gmaven-plugin', version:'1.3'
 }
 
-task moduleXml << {
-	writeModuleXml()
-}
+apply from: '../modules.gradle'
 
-task copyModuleLibs(type: Sync) {
-    from configurations.jbossModule
-    into computeModulePath(moduleName)
-}
+String createModuleXml(){
 
-task zipModule( type: Zip) {
-	description = """Builds JBoss-Module ${moduleName}"""
-	classifier = 'jboss-module'
-    from "${buildDir.path}/zip"
-}
-zipModule.dependsOn moduleXml, copyModuleLibs
-
-artifacts {
-    archives zipModule
-}
-
-String computeModulePath( String moduleName){
-	def path = (moduleName =~ /\./).replaceAll("/")
-	"${buildDir.path}/zip/modules/${path}/main"
-}
-
-String writeModuleXml(){
-
-	def modulepath = computeModulePath( moduleName)
     def sw = new StringWriter()
     def xml = new groovy.xml.MarkupBuilder(sw)
     xml.module(xmlns:"urn:jboss:module:1.0",name:moduleName) {
       resources {
         configurations.jbossModule.each {
-		  "resource-root"(path:it.name)
+          "resource-root"(path:it.name)
         }
       }
       xml.dependencies { // xml.dependecies is a workaround for conflict with dependencies
@@ -64,8 +40,5 @@ String writeModuleXml(){
         module(name:"javax.transaction.api")
       }
     }
-    println sw
-    println "Write module.xml to: " + modulepath
-    new File(modulepath).mkdirs()
-    new File(modulepath + "/module.xml").write(sw.toString())
+	sw.toString()
 }

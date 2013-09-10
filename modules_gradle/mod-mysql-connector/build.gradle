@@ -1,0 +1,65 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.objectbay'
+version = '1.0.0-SNAPSHOT'
+
+description = """Builds JBoss-Module for Mysql database driver"""
+
+project.ext.set("moduleName", "com.mysql.connector")
+
+repositories {
+     mavenRepo url: "http://repo.maven.apache.org/maven2"
+}
+
+dependencies {
+    compile group: 'mysql', name: 'mysql-connector-java', version:'5.1.24'
+//    compile group: 'org.codehaus.gmaven', name: 'gmaven-plugin', version:'1.3', transitive:false
+}
+
+task moduleXml << {
+	writeModuleXml()
+}
+
+task copyModuleLibs(type: Sync) {
+    from configurations.runtime
+    into computeModulePath(moduleName)
+}
+
+task zipModule( type: Zip) {
+	description = """Builds JBoss-Module ${moduleName}"""
+	classifier = 'jboss-module'
+    from "${buildDir.path}/zip"
+}
+zipModule.dependsOn moduleXml, copyModuleLibs
+
+artifacts {
+    archives zipModule
+}
+
+String computeModulePath( String moduleName){
+	def path = (moduleName =~ /\./).replaceAll("/")
+	"${buildDir.path}/zip/modules/${path}/main"
+}
+
+String writeModuleXml(){
+
+	def modulepath = computeModulePath( moduleName)
+    def sw = new StringWriter()
+    def xml = new groovy.xml.MarkupBuilder(sw)
+    xml.module(xmlns:"urn:jboss:module:1.0",name:moduleName) {
+      resources {
+        configurations.runtime.each {
+		  "resource-root"(path:it.name)
+        }
+      }
+      xml.dependencies { // xml.dependecies is a workaround for conflict with dependencies
+        module(name:"javax.api")
+        module(name:"javax.transaction.api")
+      }
+    }
+    println sw
+    println "Write module.xml to: " + modulepath
+    new File(modulepath).mkdirs()
+    new File(modulepath + "/module.xml").write(sw.toString())
+}

@@ -1,6 +1,6 @@
+
 task moduleXml << {
-    createModuleXml()
-    writeModuleXml( moduleName, createModuleXml())
+    writeModuleXml( moduleName, createModuleXml(moduleName))
 }
 
 task copyModuleLibs(type: Sync) {

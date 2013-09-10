@@ -11,6 +11,7 @@ project.ext.set("moduleName", "com.mysql.connector")
 repositories {
      mavenRepo url: "http://repo.maven.apache.org/maven2"
 }
+
 configurations {
     jbossModule {
         description = 'jbossModule classpath'
@@ -25,7 +26,7 @@ dependencies {
 
 apply from: '../modules.gradle'
 
-String createModuleXml(){
+String createModuleXml(String moduleName){
 
     def sw = new StringWriter()
     def xml = new groovy.xml.MarkupBuilder(sw)

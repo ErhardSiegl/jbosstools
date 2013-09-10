@@ -11,10 +11,16 @@ project.ext.set("moduleName", "com.mysql.connector")
 repositories {
      mavenRepo url: "http://repo.maven.apache.org/maven2"
 }
+configurations {
+    jbossModule {
+        description = 'jbossModule classpath'
+        transitive = false
+    }
+}
 
 dependencies {
-    compile group: 'mysql', name: 'mysql-connector-java', version:'5.1.24'
-//    compile group: 'org.codehaus.gmaven', name: 'gmaven-plugin', version:'1.3', transitive:false
+    jbossModule group: 'mysql', name: 'mysql-connector-java', version:'5.1.24'
+//    jbossModule group: 'org.codehaus.gmaven', name: 'gmaven-plugin', version:'1.3'
 }
 
 task moduleXml << {
@@ -22,7 +28,7 @@ task moduleXml << {
 }
 
 task copyModuleLibs(type: Sync) {
-    from configurations.runtime
+    from configurations.jbossModule
     into computeModulePath(moduleName)
 }
 
@@ -49,7 +55,7 @@ String writeModuleXml(){
     def xml = new groovy.xml.MarkupBuilder(sw)
     xml.module(xmlns:"urn:jboss:module:1.0",name:moduleName) {
       resources {
-        configurations.runtime.each {
+        configurations.jbossModule.each {
 		  "resource-root"(path:it.name)
         }
       }

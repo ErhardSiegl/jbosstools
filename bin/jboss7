@@ -64,7 +64,11 @@ logdir=$rundir/log
 deployDir=$rundir/deployments/$DEPLOY_SUBDIR
 out=$logdir/out.log
 logfile=$logdir/server.log
-pidfile=$rundir/pid.lock
+if [ "x$JBOSS_PIDFILE" = "x" ]; then
+	JBOSS_PIDFILE=$rundir/pid.lock
+fi
+export JBOSS_PIDFILE
+export LAUNCH_JBOSS_IN_BACKGROUND=true
 admin="$JBOSS_HOME/bin/jboss-cli.sh --connect --controller=${BIND_ADDRSS-localhost}:$ADMIN_PORT"
 moduleDir="$JBOSS_HOME/modules"
  
@@ -76,18 +80,8 @@ deployment="$2"
 # getting pid from pid.lock
 ###########################
 get_pid() {
-    if [ -f $pidfile ]; then
-        #ps --ppid `cat $pidfile` | perl -wne '{/([0-9]+)/ && print $1}'
-        
-        # ps --pid `cat $pidfile` | perl -wne '{/([0-9]+)/ && print $1}'
-       
-	standalone_pid=`cat $pidfile` 
-        if [ `uname` = "Darwin" ];
-        then
-        	ps -ef | grep "$standalone_pid" | grep java | awk '{print $2}'
-        else
-        	ps --ppid "$standalone_pid" | perl -wne '{/([0-9]+)/ && print $1}' 
-        fi
+    if [ -f $JBOSS_PIDFILE ]; then
+		cat $JBOSS_PIDFILE
     fi
 }
 
@@ -110,10 +104,29 @@ config_dir() {
 }
 
 ###########################
+# instead of readlink -f
+###########################
+full_file_name() {
+	mfile=$1
+	if readlink --help >/dev/null 2>&1; then
+		readlink -f $mfile
+		return
+	fi
+	m_dir=`pwd`
+	m_fdir=`dirname $mfile`
+	m_file=`basename $mfile`
+	cd $m_fdir
+	r_file=`pwd`"/$m_file"
+	cd $m_dir
+	echo $r_file
+	# echo "readlink workaround $r_file" 1>&2
+}
+
+###########################
 # configure server from file
 ###########################
 configure() {
-	file=`readlink -f $1`
+	file=`full_file_name $1`
 	f_dir=`dirname $file`
 	f_curr_dir=`pwd`
 	cd $f_dir
@@ -179,7 +192,7 @@ is_running() {
 ###########################
 check_started() {
  	file=$1
-	egrep -iq 'JBoss (EAP|AS).*(started|gestartet)' $file
+	egrep -is 'JBoss (EAP|AS).*(started|gestartet)' $file > /dev/null
 }
 
 ###########################
@@ -226,7 +239,6 @@ case "$action" in
     cd $rundir
     rm -f $out
     $start > $out 2>&1 &
-    echo -n $! > $pidfile
     cnt=$START_TIMEOUT
     sleep 1
     while [ $cnt -gt 0 ] && ! check_started $out 
@@ -269,7 +281,7 @@ case "$action" in
         else
             echo "$displayName stopped"
         fi
-		rm -f $pidfile 
+		rm -f $JBOSS_PIDFILE 
     fi
   ;;
   kill)
@@ -305,7 +317,7 @@ case "$action" in
 	fi
     echo "  Stdoutfile: $out"
     echo "  Logfile: $logfile"
-    echo "  Pidfile: $pidfile"
+    echo "  Pidfile: $JBOSS_PIDFILE"
     echo "  Deploy dir: $deployDir"
     echo "  Config file: $configFile"
   ;;

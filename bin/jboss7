@@ -39,14 +39,21 @@ export JBOSS_INSTANZ_NAME=$instanzName
 if [ X$DEPLOY_SUBDIR = X ]; then
 	DEPLOY_SUBDIR=""
 fi
- 
+
+# You may use JBOSS_PORT_OFFSET or PORT_OFFSET to set the Port-Offset
+# The use of PORT_OFFSET is deprecated. Use JBOSS_PORT_OFFSET instead.
+PORT_OFFSET=${JBOSS_PORT_OFFSET:-"$PORT_OFFSET"}
 if [ X$PORT_OFFSET = X ]; then
 	PORT_OFFSET=0
 else
 	OFFSET_PROP="-Djboss.socket.binding.port-offset=$PORT_OFFSET"
 fi
 
-let ADMIN_PORT=9999+$PORT_OFFSET
+let JBOSS_ADMIN_PORT=9999+$PORT_OFFSET
+let JBOSS_HTTP_PORT=8080+$PORT_OFFSET
+
+export JBOSS_PORT_OFFSET=$PORT_OFFSET
+export JBOSS_ADMIN_PORT JBOSS_HTTP_PORT
 
 rundir=$JBOSS_HOME/standalone
 start="$JBOSS_HOME/bin/standalone.sh -Djboss.node.name=$instanzName $OFFSET_PROP $JBOSS_OPTS"
@@ -69,7 +76,7 @@ if [ "x$JBOSS_PIDFILE" = "x" ]; then
 fi
 export JBOSS_PIDFILE
 export LAUNCH_JBOSS_IN_BACKGROUND=true
-admin="$JBOSS_HOME/bin/jboss-cli.sh --connect --controller=${BIND_ADDRSS-localhost}:$ADMIN_PORT"
+admin="$JBOSS_HOME/bin/jboss-cli.sh --connect --controller=${BIND_ADDRSS-localhost}:$JBOSS_ADMIN_PORT"
 moduleDir="$JBOSS_HOME/modules"
  
 
@@ -210,10 +217,10 @@ wait_for_admin_app() {
     while [ ${cnt} -le 30 ]; do
 		check_admin_app && return 0
         let cnt=${cnt}+1
-        echo "INFO: [$(date +'%Y-%m-%d %H:%M:%S')] Admin application not available at port ${ADMIN_PORT}" 
+        echo "INFO: [$(date +'%Y-%m-%d %H:%M:%S')] Admin application not available at port ${JBOSS_ADMIN_PORT}" 
         sleep 1
     done
-    echo "ERROR: Admin application not available at port ${ADMIN_PORT}" 
+    echo "ERROR: Admin application not available at port ${JBOSS_ADMIN_PORT}" 
 	exit 1
 }
 
@@ -302,19 +309,20 @@ case "$action" in
     if [ -z "$pid" ]; then
         #not running
         echo "$displayName is not running"
-		echo "  Admin-Port: $ADMIN_PORT"
+		echo "  Admin-Port: $JBOSS_ADMIN_PORT"
     else
         echo "$displayName running on pid $pid"
 		if check_admin_app; then
-			echo "  Admin-Port: $ADMIN_PORT open"
+			echo "  Admin-Port: $JBOSS_ADMIN_PORT open"
 		else
-			echo "  Admin-Port: $ADMIN_PORT not reachable!"
+			echo "  Admin-Port: $JBOSS_ADMIN_PORT not reachable!"
 		fi
     fi
     echo "  JBOSS_HOME=$JBOSS_HOME"
 	if [ ! -d $JBOSS_HOME ]; then
 		echo "  Directory $JBOSS_HOME does not exist!"
 	fi
+    echo "  JBOSS_HTTP_PORT=$JBOSS_HTTP_PORT"
     echo "  Stdoutfile: $out"
     echo "  Logfile: $logfile"
     echo "  Pidfile: $JBOSS_PIDFILE"

@@ -87,9 +87,14 @@ deployment="$2"
 # getting pid from pid.lock
 ###########################
 get_pid() {
-    if [ -f $JBOSS_PIDFILE ]; then
-		cat $JBOSS_PIDFILE
-    fi
+	if [ -f $JBOSS_PIDFILE ]; then
+		pid=`cat $JBOSS_PIDFILE`
+		if ps -p $pid >/dev/null 2>&1; then
+			echo $pid
+			return 0;
+		fi
+	fi
+	return 1
 }
 
 ###########################
@@ -185,13 +190,7 @@ configure() {
 # check for running server
 ###########################
 is_running() {
- 
-    pid=`get_pid`
-    if [ -z "$pid" ]; then
-        return 1
-    else
-        return 0
-    fi
+	get_pid > /dev/null
 }
  
 ###########################

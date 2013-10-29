@@ -107,7 +107,7 @@ config_dir() {
 	cd $dir
 	if [ -f 00_BOOTSTRAP ]; then
 		echo "Execute 00_BOOTSTRAP"
-		/bin/sh 00_BOOTSTRAP || ( echo "00_BOOTSTRAP failed" && exit -1 ) || exit -1
+		/bin/bash 00_BOOTSTRAP || ( echo "00_BOOTSTRAP failed" && exit -1 ) || exit -1
 	fi
 	for file in *; do
 		configure $file
@@ -152,9 +152,9 @@ configure() {
 		}
   	  ;;
   	  sh)
-		echo /bin/sh $file
-		/bin/sh $file || {
-			echo "[ERROR]: failed executing /bin/sh $file" ; exit 1
+		echo /bin/bash $file
+		/bin/bash $file || {
+			echo "[ERROR]: failed executing /bin/bash $file" ; exit 1
 		}
   	  ;;
   	  module)
@@ -194,11 +194,11 @@ is_running() {
 }
  
 ###########################
-# check logfile for Started-Message
+# check server for state running
 ###########################
 check_started() {
- 	file=$1
-	egrep -is 'JBoss (EAP|AS).*(started|gestartet)' $file > /dev/null
+	state=$($admin -c ":read-attribute(name=server-state)"  2>/dev/null | grep result | cut -d'"' -f4 2>/dev/null)
+	test  X$state = Xrunning 
 }
 
 ###########################
@@ -260,7 +260,7 @@ case "$action" in
     		echo "$displayName started"
 		else
 			echo "$displayName process seems to run, but no 'started' message was found in output within $START_TIMEOUT seconds." 1>&2
-			echo "The timeout (START_TIMEOUT) may be too low, it might hang or the loglevel is set too high for standard output!" 1>&2
+			echo "The timeout (JBOSS_START_TIMEOUT) may be too low, it might hang or the loglevel is set too high for standard output!" 1>&2
 		fi
     else
         echo "$displayName not startet!" 1>&2

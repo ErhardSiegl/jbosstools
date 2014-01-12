@@ -50,6 +50,7 @@ else
 fi
 
 let JBOSS_ADMIN_PORT=9999+$PORT_OFFSET
+let JBOSS_ADMIN_HTTP_PORT=9990+$PORT_OFFSET
 let JBOSS_HTTP_PORT=8080+$PORT_OFFSET
 
 export JBOSS_PORT_OFFSET=$PORT_OFFSET
@@ -61,8 +62,9 @@ configFile=$rundir/configuration/standalone.xml
 displayName="JBoss Server $instanzName"
 
 if [ ! X$DOMAIN_MODE = X ]; then
+	DOMAIN_PROP="-Djboss.management.native.port=$JBOSS_ADMIN_PORT -Djboss.management.http.port=$JBOSS_ADMIN_HTTP_PORT"
 	rundir=$JBOSS_HOME/domain
-	start="$JBOSS_HOME/bin/domain.sh $JBOSS_OPTS"
+	start="$JBOSS_HOME/bin/domain.sh $DOMAIN_PROP $JBOSS_OPTS"
 	displayName="JBoss Domain $instanzName"
 	configFile=$rundir/configuration/domain.xml
 fi
@@ -71,6 +73,9 @@ logdir=$rundir/log
 deployDir=$rundir/deployments/$DEPLOY_SUBDIR
 out=$logdir/out.log
 logfile=$logdir/server.log
+if [ ! X$DOMAIN_MODE = X ]; then
+	logfile=$logdir/host-controller.log
+fi
 if [ "x$JBOSS_PIDFILE" = "x" ]; then
 	JBOSS_PIDFILE=$rundir/pid.lock
 fi
@@ -197,7 +202,12 @@ is_running() {
 # check server for state running
 ###########################
 check_started() {
-	state=$($admin -c ":read-attribute(name=server-state)"  2>/dev/null | grep result | cut -d'"' -f4 2>/dev/null)
+	if [ ! X$DOMAIN_MODE = X ]; then
+		local_host=$($admin -c ":read-attribute(name=local-host-name)"  2>/dev/null | grep result | cut -d'"' -f4 2>/dev/null)
+		state=$($admin -c "/host=$local_host:read-attribute(name=host-state)"  2>/dev/null | grep result | cut -d'"' -f4 2>/dev/null)
+	else
+		state=$($admin -c ":read-attribute(name=server-state)"  2>/dev/null | grep result | cut -d'"' -f4 2>/dev/null)
+	fi
 	test  X$state = Xrunning 
 }
 
@@ -259,8 +269,7 @@ case "$action" in
 			wait_for_admin_app  ### It seems that sometimes the admin-port is not open immediately ###
     		echo "$displayName started"
 		else
-			echo "$displayName process seems to run, but no 'started' message was found in output within $START_TIMEOUT seconds." 1>&2
-			echo "The timeout (JBOSS_START_TIMEOUT) may be too low, it might hang or the loglevel is set too high for standard output!" 1>&2
+			echo "$displayName process seems to run, but the state is not 'started' within $START_TIMEOUT seconds." 1>&2
 		fi
     else
         echo "$displayName not startet!" 1>&2
@@ -315,6 +324,9 @@ case "$action" in
 			echo "  Admin-Port: $JBOSS_ADMIN_PORT open"
 		else
 			echo "  Admin-Port: $JBOSS_ADMIN_PORT not reachable!"
+		fi
+		if check_started; then
+			echo "  Server-State: running"
 		fi
     fi
     echo "  JBOSS_HOME=$JBOSS_HOME"

@@ -21,6 +21,11 @@ if [ -e "$JBOSS_HOME" ]; then
     error=1
 fi
 
+if [ -n "$JBossPatch" -a ! -f "$JBossPatch" ]; then
+   	echo "Patch $JBossPatch doesn't exist!" 1>&2
+    error=1
+fi
+
 test $error = 0 || exit $error
 
 TmpInstall=${JBOSS_HOME}_Tmp$$
@@ -29,5 +34,11 @@ unzip -d $TmpInstall $JBossPackage
 mv $TmpInstall/* $JBOSS_HOME
 rm -r $TmpInstall
 
-cat README.txt
+if [ -n "$JBossPatch" ]; then
+    echo "Install patch $JBossPatch" 1>&2
+	$JBOSS_HOME/bin/jboss-cli.sh "patch apply $JBossPatch"
+    error=$?
+fi
 
+cat README.txt
+exit $error

@@ -150,7 +150,7 @@ configure() {
 
 	ext=`echo $file | sed  's/.*\.//'`
 	case "$ext" in
-	  conf)
+	  conf|cli)
 		echo $admin --file=$file
 		$admin --file=$file || {
 			echo "[ERROR]: failed executing $admin --file=$file" ; exit 1
@@ -384,6 +384,7 @@ case "$action" in
 		echo "usage: $0 $1 file.extension" 1>&2
 		echo "  where extension is in:" 1>&2
 		echo "    conf - file with commands for $admin" 1>&2
+		echo "    cli - same as conf" 1>&2
 		echo "    sh   - file with shell commands. JBOSS_HOME is exported." 1>&2
 		echo "    module - Zip-file to be unpacked in $moduleDir" 1>&2
 		echo "    zip - Zip-file to be unpacked in JBOSS_HOME ($JBOSS_HOME)" 1>&2

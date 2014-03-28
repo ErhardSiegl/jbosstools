@@ -1,1 +1,1 @@
-$JBOSS_HOME/bin/add-user.sh admin jboss ManagementRealm --silent=true 
+$JBOSS_HOME/bin/add-user.sh admin admin@123 ManagementRealm --silent=true 

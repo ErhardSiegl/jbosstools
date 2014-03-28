@@ -46,7 +46,7 @@ fi
 
 
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
-    JBOSS_MODULEPATH="$JBOSS_HOME/modules"
+    JBOSS_MODULEPATH="$JBOSS_HOME/modules/system/layers/base"
 fi
 
 # For Cygwin, switch paths to Windows format before running java

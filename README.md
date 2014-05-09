@@ -1,5 +1,5 @@
-OBJ JBoss Tools
-===============
+JBoss Setup Scripts
+===================
 
 The jbosstools are a collection of scripts and examples how to configure
 JBoss AS and JBoss EAP. 
@@ -7,13 +7,13 @@ JBoss AS and JBoss EAP.
 Prerequisites
 -------------
 * The JBoss version must be 7 or higher.
-* Unix-style OS. Tested on Linux (Fedora, RHEL, Ubuntu)
+* Unix-style OS. Tested on Linux (Fedora, RHEL, Ubuntu), Solaris
 
 Quickstart
 ----------
 
 1. Download the JBoss ZIP package to a local file
-2. Clone the Git-repository: `git clone https://github.com/ErhardSiegl/jbosstools.git`
+2. Clone the Git-repository: `git clone git@github.com:objectbay/JBSS.git`
 3. Make sure that $HOME/bin is in the PATH (`export PATH=~/bin:$PATH`)
 
 Run the following commands:

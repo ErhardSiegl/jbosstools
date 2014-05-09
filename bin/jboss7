@@ -21,12 +21,26 @@ fi
 # You may use TIMEOUT or JBOSS_TIMEOUT, JBOSS_START_TIMEOUT, JBOSS_STOP_TIMEOUT
 # The use of TIMEOUT is deprecated. Use JBOSS_TIMEOUT instead.
 TIMEOUT=40
+JBOSS_MAJOR_CODE=7
 
 test -f $HOME/.${instanzName}rc && . $HOME/.${instanzName}rc
 
 if [ X$JBOSS_HOME = X ]; then
  	echo "ERROR: Variable JBOSS_HOME is not set."
  	exit 1
+fi
+
+if [ ! X$JBOSS_RELEASE_NAME = X ]; then
+ 	product=`echo $JBOSS_RELEASE_NAME | perl -ne 'print /(.*?)-\d+/'`
+ 	major=`  echo $JBOSS_RELEASE_NAME | perl -ne 'print /.*?-(\d+)/'`
+	case "$product" in
+	  *eap)
+		let JBOSS_MAJOR_CODE=$major+1
+  	  ;;
+	  *wildfly|*as)
+		JBOSS_MAJOR_CODE=$major
+  	  ;;
+	esac
 fi
 
 TIMEOUT=${JBOSS_TIMEOUT:-"$TIMEOUT"}
@@ -49,8 +63,12 @@ else
 	OFFSET_PROP="-Djboss.socket.binding.port-offset=$PORT_OFFSET"
 fi
 
-let JBOSS_ADMIN_PORT=9999+$PORT_OFFSET
 let JBOSS_ADMIN_HTTP_PORT=9990+$PORT_OFFSET
+if [ $JBOSS_MAJOR_CODE -ge 8 ]; then
+	JBOSS_ADMIN_PORT=$JBOSS_ADMIN_HTTP_PORT
+else
+	let JBOSS_ADMIN_PORT=9999+$PORT_OFFSET
+fi
 let JBOSS_HTTP_PORT=8080+$PORT_OFFSET
 
 export JBOSS_PORT_OFFSET=$PORT_OFFSET

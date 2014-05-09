@@ -1,7 +1,8 @@
 # Copy this with name '.' + instanzname + 'rc' (e.g. .mybossrc for myboss) to $HOME
-
-JBOSS_HOME=$HOME/jboss-eap-6.0
-export JBossPackage=$HOME/Downloads/jboss-eap-6.0.1.zip
+# JBOSS_RELEASE_NAME is used to determine the jboss-version (jboss7/wildfly,...)
+JBOSS_RELEASE_NAME=jboss-eap-6.2.1
+JBOSS_HOME=$HOME/jboss-eap-6
+export JBossPackage=$HOME/Downloads/$JBOSS_RELEASE_NAME.zip
 
 # For Cluster
 # BIND_ADDRSS=192.168.40.129

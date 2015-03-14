@@ -365,8 +365,8 @@ case "$action" in
     tail -f $out
   ;;
   deploy)
-	echo $admin -c "deploy --force $deployment"
-	$admin -c "deploy --force $deployment"
+	echo $admin \"deploy --force $deployment\"
+	$admin "deploy --force $deployment"
   ;;
   undeploy)
 	name=`basename $deployment`

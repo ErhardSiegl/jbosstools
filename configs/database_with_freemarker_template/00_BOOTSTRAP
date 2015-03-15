@@ -39,12 +39,13 @@ provideSubstitute() {
 ###########################
 convert() {
     dir=$1
+	DEFAULT_ENV=../environments/fm/default.env
     echo "Configure Directory $dir"
 	for f in `find $dir -name "*.templ"`; do
 		dirname=`dirname $f`
 		basename=`basename $f .templ`
 		echo Process template $f
-		./substitute -p "$ENV_CONFIG" -t $f -o $dirname/$basename
+		./substitute -p "$DEFAULT_ENV,$ENV_CONFIG" -t $f -o $dirname/$basename
 	done
 }
 

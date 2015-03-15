@@ -48,7 +48,7 @@ shift `expr $OPTIND - 1`
 
 ##################### Beginn #########################
 
-if [ ! -f $PROP_FILE ] || [ x$PROP_FILE = x ]
+if [ x$PROP_FILE = x ]
 then
 	echo "Property file $PROP_FILE not found"
 	print_usage

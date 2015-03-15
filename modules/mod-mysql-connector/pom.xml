@@ -5,7 +5,7 @@
   <artifactId>01_mod-mysql-connector</artifactId>
   <packaging>pom</packaging>
   <parent>
-  	<groupId>com.objectbay</groupId>
+  	<groupId>com.gepardec.jbss</groupId>
   	<artifactId>jboss-modules-examples</artifactId>
   	<version>1.0.0-SNAPSHOT</version>
   </parent>

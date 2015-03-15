@@ -1,0 +1,14 @@
+/subsystem=datasources/data-source=bookingDatasource:add( 	\
+	jndi-name="java:/datasources/bookingDatasource", 		\
+	connection-url="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", 	\
+	driver-name=h2, user-name=${CONF_DB_USER}, password=${CONF_DB_PASSWORD})
+/subsystem=datasources/data-source=bookingDatasource:enable
+
+<#list CONF_DBS_USER?keys as key>
+
+/subsystem=datasources/data-source=myDatasource${key}:add(   \
+    jndi-name="java:/datasources/myDatasource${key}",        \
+    connection-url="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",    \
+    driver-name=h2, user-name=${CONF_DBS_USER[key]}, password=${CONF_DBS_PASSWORD[key]})
+/subsystem=datasources/data-source=myDatasource${key}:enable
+</#list>

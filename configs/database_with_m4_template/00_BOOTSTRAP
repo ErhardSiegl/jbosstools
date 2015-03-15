@@ -5,8 +5,13 @@ if [ -z "$ENV_CONFIG" ]; then
 fi
 
 if [ ! -d "$ENV_CONFIG" ]; then
-    echo "Directory $ENV_CONFIG doesn't exist! Set ENV_CONFIG or use argument" 1>&2
-    exit 1
+    echo "WARN: Directory $ENV_CONFIG doesn't exist! Set ENV_CONFIG or use argument" 1>&2
+	echo "WARN: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	ENV_CONFIG=../environments/example
+    echo "WARN: example values from $ENV_CONFIG will be used!" 1>&2
+    echo "WARN: Change this code in real-world environments" 1>&2
+	echo "WARN: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    # exit 1
 fi
 
 

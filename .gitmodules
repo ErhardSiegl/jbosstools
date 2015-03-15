@@ -1,0 +1,3 @@
+[submodule "jbss-substitute"]
+	path = jbss-substitute
+	url = git@github.com:Gepardec/jbss-substitute.git

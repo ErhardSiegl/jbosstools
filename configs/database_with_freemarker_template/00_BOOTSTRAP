@@ -1,0 +1,52 @@
+#!/bin/sh
+
+if [ -z "$ENV_CONFIG" ]; then
+	ENV_CONFIG=$1
+fi
+
+if [ ! -d "$ENV_CONFIG" ]; then
+    echo "WARN: File $ENV_CONFIG doesn't exist! Set ENV_CONFIG or use argument" 1>&2
+    echo "WARN: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    ENV_CONFIG=../environments/fm/example.env
+    echo "WARN: Example values from $ENV_CONFIG will be used!" 1>&2
+    echo "WARN: Change this code in real-world environments" 1>&2
+    echo "WARN: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    # exit 1
+fi
+
+###########################
+# provide the script and libraries for template processing
+###########################
+provideSubstitute() {
+	echo "Let's try to get the latest freemarker-utilities"
+	JBSS_SUBSTITUTE=../../jbss-substitute/
+	cp $JBSS_SUBSTITUTE/target/jbss-substitute-*-jar-with-dependencies.jar substitute.jar
+	cp $JBSS_SUBSTITUTE/src/main/resources/substitute.sh ./substitute
+	chmod a+x substitute
+	
+	if [ ! -x substitute ]; then
+		echo "Script substitute is missing or not executable!" 1>&2
+		echo "Should be copied from $JBSS_SUBSTITUTE/src/main/resources" 1>&2
+		exit 2
+	fi
+	if [ ! -r substitute.jar ]; then
+		echo "Library jbss-substitute.jar is missing!" 1>&2; exit 3
+	fi
+}
+
+###########################
+# convert all m4 templates in directory and subdirectories
+###########################
+convert() {
+    dir=$1
+    echo "Configure Directory $dir"
+	for f in `find $dir -name "*.templ"`; do
+		dirname=`dirname $f`
+		basename=`basename $f .templ`
+		echo Process template $f
+		./substitute -p "$ENV_CONFIG" -t $f -o $dirname/$basename
+	done
+}
+
+provideSubstitute
+convert `pwd`

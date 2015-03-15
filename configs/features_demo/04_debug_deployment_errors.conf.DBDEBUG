@@ -1,0 +1,2 @@
+/subsystem=logging/logger=org.hibernate.internal.SessionFactoryImpl:add(level=DEBUG)
+/subsystem=logging/logger=org.hibernate.hql.internal.ast.QueryTranslatorImpl:add(level=DEBUG)

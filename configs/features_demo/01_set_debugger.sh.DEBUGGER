@@ -1,0 +1,11 @@
+#!/bin/sh
+
+dbgPort=$((8787 + $JBOSS_PORT_OFFSET))
+
+dbgPre='JAVA_OPTS="$JAVA_OPTS '
+dbgOpts="-Xrunjdwp:transport=dt_socket,address=$dbgPort,server=y,suspend=n"
+dbgPost='"'
+dbgFull=$dbgPre$dbgOpts$dbgPost
+
+echo $dbgFull >> $JBOSS_HOME/bin/standalone.conf
+

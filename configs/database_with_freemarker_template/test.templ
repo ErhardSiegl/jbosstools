@@ -1,0 +1,10 @@
+user-name=${CONF_DB_USER}
+password=${CONF_DB_PASSWORD}
+default=${CONF_MISSING_VALUE!"default"}
+
+List:
+<#list CONF_DBS_USER?keys as key>
+  Key:${key}
+  User: ${CONF_DBS_USER[key]}
+
+</#list>

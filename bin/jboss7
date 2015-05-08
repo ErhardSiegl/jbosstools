@@ -202,6 +202,12 @@ configure() {
             echo "[ERROR]: failed executing $0 restart" ; exit 1
         }
   	  ;;
+  	  interactive)
+		echo $0 interactive
+		$0 interactive || {
+            echo "[ERROR]: failed executing $0 interactive" ; exit 1
+        }
+  	  ;;
   	  00_BOOTSTRAP)
 		# Already done
   	  ;;
@@ -328,6 +334,24 @@ case "$action" in
 		echo "Killing $displayName"
 		kill -KILL  `get_pid`
     fi
+  ;;
+  interactive)
+    $0 stop
+	sleep 1
+    if is_running; then
+        echo "$displayName couln't be stopped. PID: " `get_pid`
+        exit 0
+    fi
+ 
+    echo "$start"
+    echo -n "Starting $displayName "
+    if ! [ -d $logdir ]; then
+        echo Create Log-Verzeichnis: $logdir
+        mkdir $logdir || exit -2
+    fi
+    cd $rundir
+    rm -f $out
+    $start 
   ;;
   restart)
     $0 stop

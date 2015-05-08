@@ -1,0 +1,10 @@
+# Configuration for myjboss
+JBOSS_HOME=/usr/local/jboss-myjboss
+JBOSS_RELEASE_NAME=jboss-eap-6.3.0
+export JBossPackage=/usr/local/Downloads/${JBOSS_RELEASE_NAME}.zip
+
+PORT_OFFSET=0
+
+export ENV_CONFIG=../environments/example
+
+export JBOSS_FORCE_INSTALL=True

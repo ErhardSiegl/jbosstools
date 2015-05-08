@@ -17,8 +17,12 @@ if [ -z "$JBOSS_HOME" ]; then
 fi
 
 if [ -e "$JBOSS_HOME" ]; then
-    echo "$JBOSS_HOME exists, will not override it. Remove it manually!" 1>&2
-    error=1
+    if [ X$JBOSS_FORCE_INSTALL = XTrue ]; then
+	rm -rf $JBOSS_HOME
+    else
+        echo "$JBOSS_HOME exists, will not override it. Remove it manually!" 1>&2
+        error=1
+    fi
 fi
 
 if [ -n "$JBossPatch" -a ! -f "$JBossPatch" ]; then

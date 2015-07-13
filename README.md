@@ -12,16 +12,17 @@ Prerequisites
 Quickstart
 ----------
 
-1. Download the JBoss ZIP package to a local file
-2. Clone the Git-repository: `git clone git@github.com:objectbay/JBSS.git`
+1. Download the JBoss ZIP package (e.g. jboss-eap-6.4.0.zip) to $HOME/Downloads
+2. Clone the Git-repository: `git clone https://github.com/Gepardec/JBSS.git`
 3. Make sure that $HOME/bin is in the PATH (`export PATH=~/bin:$PATH`)
 
 Run the following commands:
 
-	jbosstools/bin/setup.sh -h
-	jbosstools/bin/setup.sh -z path_to_the_jboss_zip_package
-	myjboss configure jbosstools/configs/basic_setup
-	myjboss configure jbosstools/configs/database_with_template
+	cd JBSS
+	bin/setup.sh -h
+	bin/setup.sh -r jboss-eap-6.4.0
+	myjboss configure configs/basic_setup
+	myjboss configure configs/database_with_m4_template
 	myjboss help
 
 Point your browser to http://localhost:8080/seam-booking

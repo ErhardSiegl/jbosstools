@@ -1,3 +1,5 @@
+This Repo is archived. See Gepardec/JBSS for a current version.
+
 JBoss Setup Scripts
 ===================
 
